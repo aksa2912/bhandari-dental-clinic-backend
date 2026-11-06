@@ -27,7 +27,19 @@ const createAppointment = async (req, res) => {
     const startDate = new Date(startTime);
     const endDate = new Date(startDate.getTime() + duration * 60000);
 
-    // 5. THE CONCURRENCY CHECK
+    // 5. CHECK IF THE SLOT IS BLOCKED BY THE ADMIN
+    const blockedQuery = `
+      SELECT 1 FROM blocked_dates 
+      WHERE start_time < $2 AND end_time > $1
+    `;
+    const blockedResult = await client.query(blockedQuery, [startDate.toISOString(), endDate.toISOString()]);
+
+    if (blockedResult.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'Clinic is closed at this time. Please choose another slot.' });
+    }
+
+    // 6. THE CONCURRENCY CHECK
     // We need to know if adding this appointment would cause 3 concurrent overlaps
     const overlapQuery = `
       SELECT a1.id
@@ -49,7 +61,7 @@ const createAppointment = async (req, res) => {
       return res.status(409).json({ error: 'Slot full. Please choose another time.' });
     }
 
-    // 6. Insert
+    // 7. Insert
     const insertQuery = `
       INSERT INTO appointments (patient_name, patient_phone, treatment_id, start_time, end_time) 
       VALUES ($1, $2, $3, $4, $5) RETURNING *;
@@ -58,11 +70,13 @@ const createAppointment = async (req, res) => {
       patientName, patientPhone, treatmentId, startDate.toISOString(), endDate.toISOString()
     ]);
 
-    // 7. Commit
+    // 8. Commit
     await client.query('COMMIT');
     res.status(201).json(result.rows[0]);
+    
     // Send email in the background (we don't await it so it doesn't slow down the response)
     sendBookingEmail(result.rows[0]).catch(err => console.error(err));
+    
   } catch (err) {
     // If the transaction fails due to a serialization conflict, Postgres will throw a 40001 error
     await client.query('ROLLBACK');
@@ -78,6 +92,7 @@ const createAppointment = async (req, res) => {
     client.release();
   }
 };
+
 const getAllAppointments = async (req, res) => {
   try {
     const query = `
@@ -91,7 +106,7 @@ const getAllAppointments = async (req, res) => {
         t.name AS treatment_name
       FROM appointments a
       JOIN treatments t ON a.treatment_id = t.id
-      WHERE a.status != 'cancelled'  -- <-- ADD THIS LINE
+      WHERE a.status != 'cancelled'
       ORDER BY a.start_time ASC
     `;
     const result = await pool.query(query);
@@ -101,6 +116,7 @@ const getAllAppointments = async (req, res) => {
     res.status(500).json({ error: 'Database error' });
   }
 };
+
 const cancelAppointment = async (req, res) => {
   try {
     const { id } = req.params;
@@ -119,8 +135,9 @@ const cancelAppointment = async (req, res) => {
     res.status(500).json({ error: 'Database error' });
   }
 };
+
 module.exports = {
   createAppointment,
   getAllAppointments,
-  cancelAppointment // <-- Add this
+  cancelAppointment
 };
