@@ -101,7 +101,26 @@ const getAllAppointments = async (req, res) => {
     res.status(500).json({ error: 'Database error' });
   }
 };
+const cancelAppointment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      "UPDATE appointments SET status = 'cancelled' WHERE id = $1 RETURNING *",
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    res.status(200).json({ message: 'Appointment cancelled', appointment: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database error' });
+  }
+};
 module.exports = {
   createAppointment,
-  getAllAppointments
+  getAllAppointments,
+  cancelAppointment // <-- Add this
 };

@@ -3,8 +3,8 @@ const pool = require('./src/config/db');
 
 const createAdmin = async () => {
   try {
-    const email = 'admin@bhandari.com';
-    const plainPassword = 'clinic123';
+    const email = 'kimmybhandari1984@gmail.com';
+    const plainPassword = 'aksa2008';
     
     // Hash the password
     const hash = await bcrypt.hash(plainPassword, 10);

@@ -1,5 +1,11 @@
 const pool = require('../config/db');
 
+  // 1. Check if the date is a Sunday (0 = Sunday, 6 = Saturday)
+  // We parse the date string and create a Date object in UTC to avoid timezone shifts
+  const dayOfWeek = new Date(`${date}T00:00:00Z`).getUTCDay();
+  if (dayOfWeek === 0) {
+    return []; // No slots available on Sundays
+  }
 const getAvailableSlots = async (date, treatmentId) => {
   // 1. Get the duration of the treatment
   const treatmentRes = await pool.query('SELECT duration_minutes FROM treatments WHERE id = $1', [treatmentId]);
