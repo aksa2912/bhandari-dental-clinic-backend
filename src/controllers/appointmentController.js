@@ -1,3 +1,4 @@
+const { sendBookingEmail } = require('../utils/emailService');
 const pool = require('../config/db');
 
 const createAppointment = async (req, res) => {
@@ -60,7 +61,8 @@ const createAppointment = async (req, res) => {
     // 7. Commit
     await client.query('COMMIT');
     res.status(201).json(result.rows[0]);
-
+    // Send email in the background (we don't await it so it doesn't slow down the response)
+    sendBookingEmail(result.rows[0]).catch(err => console.error(err));
   } catch (err) {
     // If the transaction fails due to a serialization conflict, Postgres will throw a 40001 error
     await client.query('ROLLBACK');
@@ -78,12 +80,27 @@ const createAppointment = async (req, res) => {
 };
 const getAllAppointments = async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM appointments ORDER BY start_time ASC');
+    // We use a JOIN to get the treatment name from the treatments table
+    const query = `
+      SELECT 
+        a.id, 
+        a.patient_name, 
+        a.patient_phone, 
+        a.start_time, 
+        a.end_time, 
+        a.status,
+        t.name AS treatment_name
+      FROM appointments a
+      JOIN treatments t ON a.treatment_id = t.id
+      ORDER BY a.start_time ASC
+    `;
+    const result = await pool.query(query);
     res.status(200).json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Database error' });
-  }};
+  }
+};
 module.exports = {
   createAppointment,
   getAllAppointments

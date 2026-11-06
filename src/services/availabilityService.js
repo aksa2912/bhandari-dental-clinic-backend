@@ -8,6 +8,12 @@ const getAvailableSlots = async (date, treatmentId) => {
   }
   const duration = treatmentRes.rows[0].duration_minutes;
 
+  // Check if the clinic is closed on this date
+  const blockedRes = await pool.query('SELECT * FROM blocked_dates WHERE date = $1', [date]);
+  if (blockedRes.rows.length > 0) {
+    return []; // Return an empty array (no slots available)
+  }
+
   // 2. Get all existing appointments for this day
   const dayStart = `${date}T00:00:00.000Z`;
   const dayEnd = `${date}T23:59:59.999Z`;
