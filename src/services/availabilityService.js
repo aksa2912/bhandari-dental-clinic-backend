@@ -14,26 +14,30 @@ const getAvailableSlots = async (date, treatmentId) => {
   }
   const duration = treatmentRes.rows[0].duration_minutes;
 
-  // 3. Check if the clinic is closed on this date
-  const blockedRes = await pool.query('SELECT * FROM blocked_dates WHERE date = $1', [date]);
-  if (blockedRes.rows.length > 0) {
-    return []; // Return an empty array (no slots available)
-  }
-
-  // 4. Get all existing appointments for this day
+  // 3. Define the day start and end FIRST
   const dayStart = `${date}T00:00:00.000Z`;
   const dayEnd = `${date}T23:59:59.999Z`;
 
+  // 4. Fetch existing appointments for this day
   const appointmentsRes = await pool.query(
     `SELECT start_time, end_time FROM appointments 
      WHERE status = 'confirmed' AND start_time < $2 AND end_time > $1`,
     [dayStart, dayEnd]
   );
 
-  const busyIntervals = appointmentsRes.rows;
+  // 5. Fetch blocked slots for this day
+  const blockedRes = await pool.query(
+    `SELECT start_time, end_time FROM blocked_dates 
+     WHERE start_time < $2 AND end_time > $1`,
+    [dayStart, dayEnd]
+  );
+
+  // 6. Combine both arrays of busy times
+  const busyIntervals = appointmentsRes.rows.concat(blockedRes.rows);
+
   const freeSlots = [];
 
-  // 5. The Clinic Hours (in UTC hours)
+  // 7. The Clinic Hours (in UTC hours)
   // 10:00 AM IST = 04:30 UTC. 2:00 PM IST = 08:30 UTC.
   // 4:00 PM IST = 10:30 UTC. 7:00 PM IST = 13:30 UTC.
   const periods = [
@@ -41,7 +45,7 @@ const getAvailableSlots = async (date, treatmentId) => {
     { start: 10.5, end: 13.5 }  // Evening
   ];
 
-  // 6. Generate the slots
+  // 8. Generate the slots
   for (const period of periods) {
     let currentMinutes = period.start * 60;
     const endMinutes = period.end * 60;

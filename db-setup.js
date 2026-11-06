@@ -55,10 +55,11 @@ const createTables = async () => {
     await pool.query(adminTableQuery);
     console.log("✅ Table 'admin_users' created successfully!");
         // 4. Create blocked_dates table
-    const blockedTableQuery = `
+        const blockedTableQuery = `
       CREATE TABLE IF NOT EXISTS blocked_dates (
         id SERIAL PRIMARY KEY,
-        date DATE UNIQUE NOT NULL,
+        start_time TIMESTAMPTZ NOT NULL,
+        end_time TIMESTAMPTZ NOT NULL,
         reason VARCHAR(100)
       );
     `;

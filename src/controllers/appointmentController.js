@@ -80,7 +80,6 @@ const createAppointment = async (req, res) => {
 };
 const getAllAppointments = async (req, res) => {
   try {
-    // We use a JOIN to get the treatment name from the treatments table
     const query = `
       SELECT 
         a.id, 
@@ -92,6 +91,7 @@ const getAllAppointments = async (req, res) => {
         t.name AS treatment_name
       FROM appointments a
       JOIN treatments t ON a.treatment_id = t.id
+      WHERE a.status != 'cancelled'  -- <-- ADD THIS LINE
       ORDER BY a.start_time ASC
     `;
     const result = await pool.query(query);
