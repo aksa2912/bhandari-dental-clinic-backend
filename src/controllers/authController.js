@@ -30,12 +30,13 @@ const login = async (req, res) => {
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1d' });
 
     // 4. Send the token in an HTTP-only cookie
-    res.cookie('adminToken', token, {
-      httpOnly: true, // Prevents JS from reading the cookie (stops XSS attacks)
-      secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
-      sameSite: 'strict', 
-      maxAge: 24 * 60 * 60 * 1000 // 1 day
+        res.cookie('adminToken', token, {
+      httpOnly: true, 
+      secure: true,              // <--- MUST BE TRUE FOR CROSS-SITE COOKIES
+      sameSite: 'none',          // <--- MUST BE 'none' TO ALLOW RENDER -> NETLIFY
+      maxAge: 24 * 60 * 60 * 1000 
     });
+
 
     res.status(200).json({ message: 'Login successful' });
   } catch (err) {
@@ -46,9 +47,9 @@ const login = async (req, res) => {
 const logout = (req, res) => {
   res.clearCookie('adminToken', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    path: '/' // The path must match the path used when setting the cookie
+    secure: true,
+    sameSite: 'none',
+    path: '/'
   });
   res.status(200).json({ message: 'Logged out successfully' });
 };
