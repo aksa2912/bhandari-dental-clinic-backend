@@ -15,8 +15,12 @@ const blockRoutes = require('./routes/blockRoutes');
 
 // CORS must be registered before your routes so it runs first
 app.use(cors({
-  origin: 'http://localhost:3000', // Explicitly allow the Next.js frontend
-  credentials: true // Allow cookies to be sent and received
+  origin: [
+    'http://localhost:3000', 
+    'https://bhandaridentalclinic.netlify.app', // <--- Replace with your actual Netlify URL
+    'https://bhandaridentalclinic.online'          // <--- Replace with your custom .online domain
+  ],
+  credentials: true 
 }));
 app.use(cookieParser()); // <-- ADDED
 app.use(
