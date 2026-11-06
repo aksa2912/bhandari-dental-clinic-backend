@@ -3,8 +3,10 @@ dns.setDefaultResultOrder('ipv4first');
 require('./config/db'); // Initialize database connection
 const express = require("express");
 const treatmentRoutes = require("./routes/treatmentRoutes");
-const app =
-  express(); /*creates the Express application. Every route and middleware attaches to this object.*/
+const appointmentRoutes = require('./routes/appointmentRoutes');
+const availabilityRoutes = require('./routes/availabilityRoutes');
+
+const app = express(); /*creates the Express application. Every route and middleware attaches to this object.*/
 
 app.use(
   express.json(),
@@ -22,4 +24,6 @@ app.get("/health", (req, res) => {
   });
 });
 app.use("/api/treatments", treatmentRoutes);
+app.use("/api/appointments", appointmentRoutes);
+app.use('/api/availability', availabilityRoutes);
 module.exports = app; /*exports the app for server.js to require.*/
