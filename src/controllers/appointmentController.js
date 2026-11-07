@@ -3,9 +3,9 @@ const pool = require('../config/db');
 
 const createAppointment = async (req, res) => {
   // 1. Get the data from the request body
-  const { patientName, patientPhone, treatmentId, startTime } = req.body;
+  const { patientName, patientPhone, patientEmail, treatmentId, startTime } = req.body;
 
-  if (!patientName || !patientPhone || !treatmentId || !startTime) {
+  if (!patientName || !patientPhone || !patientEmail || !treatmentId || !startTime) {
     return res.status(400).json({ error: 'All fields are required' });
   }
 
@@ -62,12 +62,12 @@ const createAppointment = async (req, res) => {
     }
 
     // 7. Insert
-    const insertQuery = `
-      INSERT INTO appointments (patient_name, patient_phone, treatment_id, start_time, end_time) 
-      VALUES ($1, $2, $3, $4, $5) RETURNING *;
+        const insertQuery = `
+      INSERT INTO appointments (patient_name, patient_phone, patient_email, treatment_id, start_time, end_time) 
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
     `;
     const result = await client.query(insertQuery, [
-      patientName, patientPhone, treatmentId, startDate.toISOString(), endDate.toISOString()
+      patientName, patientPhone, patientEmail, treatmentId, startDate.toISOString(), endDate.toISOString()
     ]);
 
     // 8. Commit

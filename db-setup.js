@@ -33,6 +33,7 @@ const createTables = async () => {
         id SERIAL PRIMARY KEY,
         patient_name VARCHAR(100) NOT NULL,
         patient_phone VARCHAR(15) NOT NULL,
+        patient_email VARCHAR(255),
         treatment_id INTEGER REFERENCES treatments(id),
         start_time TIMESTAMPTZ NOT NULL,
         end_time TIMESTAMPTZ NOT NULL,
